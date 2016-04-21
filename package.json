@@ -1,0 +1,26 @@
+{
+  "name": "lucide",
+  "version": "0.0.0",
+  "description": "A WebGL wrapper",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/dameleon/lucide.git"
+  },
+  "keywords": [
+    "client",
+    "webgl"
+  ],
+  "author": "dameleon",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dameleon/lucide/issues"
+  },
+  "homepage": "https://github.com/dameleon/lucide#readme",
+  "devDependencies": {
+    "tsc": "^1.20150623.0"
+  }
+}
