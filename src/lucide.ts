@@ -257,7 +257,7 @@ module Lucide {
             if (createsMitmap) {
                 this.gl.generateMipmap(this.gl.TEXTURE_2D);
             }
-            this.gl.bindTexture(this.gl.);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, null);
         }
     }
 }
