@@ -27,7 +27,8 @@
         uniform vec3 lightDirection;
         uniform vec3 eyePosition;
         uniform vec3 centerPoint;
-        uniform sampler2D texture;
+        uniform sampler2D texture0;
+        uniform sampler2D texture1;
         varying vec2 vTexCoord;
         varying vec3 vNormal;
         varying vec4 vColor;
@@ -40,7 +41,9 @@
             float diff = clamp(dot(normalize(invLight), vNormal), 0.1, 1.0);
             float spec = pow(clamp(dot(halfVector, vNormal), 0.0, 1.0), 20.0);
             // gl_FragColor = vec4(vColor.rgb * diff + spec, vColor.a);
-            gl_FragColor = texture2D(texture, vTexCoord);
+            vec4 smpColor0 = texture2D(texture0, vTexCoord);
+            vec4 smpColor1 = texture2D(texture1, vTexCoord);
+            gl_FragColor = vec4((vColor * smpColor0 * smpColor1).rgb * diff + spec, vColor.a);
         }
     </script>
     <script src="lib/lucide.js"></script>

@@ -1,3 +1,5 @@
+/// <reference path="tsd.d.ts" />
+
 module Lucide {
 
     export class Gl {
@@ -7,8 +9,6 @@ module Lucide {
 
         constructor(canvas: HTMLCanvasElement) {
             this.context = canvas.getContext("experimental-webgl");
-            this.context.enable(this.context.DEPTH_TEST);
-            this.context.depthFunc(this.context.LEQUAL);
         }
 
         public createProgram(vertexShader: WebGLShader, fragmentShader: WebGLShader): Program {
@@ -41,7 +41,7 @@ module Lucide {
             return new IndexBufferObject(this.context, value, usage);
         }
         
-        public createTexture(unit: number = this.context.TEXTURE0): Texture {
+        public createTexture(unit: number = 0): Texture {
             return new Texture(this.context, unit);
         }
 
@@ -68,6 +68,14 @@ module Lucide {
         public exec(target: ((gl: WebGLRenderingContext) => void)) {
             target(this.context);
         }
+    }
+
+    class Renderer {
+        constructor(protected gl: WebGLRenderingContext) {
+
+        }
+
+
     }
 
     class BufferObject<T extends ArrayBuffer> {
@@ -99,7 +107,7 @@ module Lucide {
     }
 
     export class VertexBufferObject extends BufferObject<Float32Array> {
-        constructor(protected gl: WebGLRenderingContext, public size: number, value: Float32Array, public usage: number) {
+        constructor(protected gl: WebGLRenderingContext, public size: number, value: Float32Array, public usage: number = gl.STATIC_DRAW) {
             super(gl, value, usage);
             this.target = this.gl.ARRAY_BUFFER;
             this.initialize(value);
@@ -109,7 +117,7 @@ module Lucide {
     export class IndexBufferObject extends BufferObject<Int16Array> {
         public size: number;
 
-        constructor(protected gl: WebGLRenderingContext, value: Int16Array, public usage: number) {
+        constructor(protected gl: WebGLRenderingContext, value: Int16Array, public usage: number = gl.STATIC_DRAW) {
             super(gl, value, usage);
             this.target = this.gl.ELEMENT_ARRAY_BUFFER;
             this.size = value.length;
@@ -121,10 +129,28 @@ module Lucide {
         public context: WebGLProgram;
         public vertexShader: WebGLShader;
         public fragmentShader: WebGLShader;
+        public attributeMap = {
+            "position": "position",
+            "color": "color",
+            "normal": "normal",
+            "texture": "texCoord",
+        };
 
         constructor(private gl: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
             this.context = this.gl.createProgram();
             this.linkShaders(vertexShader, fragmentShader);
+        }
+
+        public registerMesh(mesh: Mesh) {
+            Object.keys(this.attributeMap).forEach((key) => {
+                this.createAttributeSetter(this.attributeMap[key]).setValue(mesh.size, mesh[key], mesh.usage);
+            });
+        }
+
+        public registerTextures(textures: Texture[]) {
+            textures.forEach((tex) => {
+                this.createUniformSetter("texture" + tex.unit).set1i(tex.unit);
+            });
         }
 
         public createAttributeSetter(name: string): AttributeSetter {
@@ -151,6 +177,10 @@ module Lucide {
     export class AttributeSetter {
         constructor(private gl: WebGLRenderingContext, private location: number) {
             this.gl.enableVertexAttribArray(this.location);
+        }
+
+        public setValue(size: number, value: Float32Array, usage?: number): AttributeSetter {
+            return this.set(new VertexBufferObject(this.gl, size, value, usage));
         }
 
         public set(vbo: VertexBufferObject): AttributeSetter {
@@ -243,21 +273,147 @@ module Lucide {
 
     export class Texture {
         public context: WebGLTexture;
+        public index: number;
 
         constructor(private gl: WebGLRenderingContext, public unit: number) {
             this.context = this.gl.createTexture();
+            this.index = this.gl.TEXTURE0 + unit;
         }
 
         public set(image: HTMLImageElement, createsMitmap: boolean, level: number, internalFormat: number, format: number, type: number);
         public set(canvas: HTMLCanvasElement, createsMitmap: boolean, level: number, internalFormat: number, format: number, type: number);
         public set(content: any, createsMitmap: boolean = true, level: number = 0, internalFormat: number = this.gl.RGBA, format: number = this.gl.RGBA, type: number = this.gl.UNSIGNED_BYTE) {
-            this.gl.activeTexture(this.unit);
-            this.gl.bindTexture(this.gl.TEXTURE_2D, this.context);
-            this.gl.texImage2D(this.gl.TEXTURE_2D, 0, this.gl.RGBA, this.gl.RGBA, this.gl.UNSIGNED_BYTE, content);
+            this.bind();
+            this.gl.texImage2D(this.gl.TEXTURE_2D, level, internalFormat, format, type, content);
             if (createsMitmap) {
                 this.gl.generateMipmap(this.gl.TEXTURE_2D);
             }
-            // this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+            this.unbind();
+        }
+
+        public bind() {
+            this.gl.activeTexture(this.index);
+            this.gl.bindTexture(this.gl.TEXTURE_2D, this.context);
+        }
+
+        public unbind() {
+            this.gl.bindTexture(this.gl.TEXTURE_2D, null);
+        }
+    }
+
+    export class Material {
+        public textures: Texture[];
+
+        constructor(public mesh: Mesh, ...textures: Texture[]) {
+            this.textures = textures;
+        }
+    }
+
+    export class Mesh {
+        public position: VertexBufferObject;
+        public index: IndexBufferObject;
+        public normal: VertexBufferObject;
+        public texture: VertexBufferObject;
+        public color: VertexBufferObject;
+        public size: number = 1;
+        public usage: number = this.gl.STATIC_DRAW;
+        public type: number = this.gl.TRIANGLES;
+
+        constructor(
+            protected gl: WebGLRenderingContext,
+            position: Float32Array,
+            index: Int16Array,
+            normal?: Float32Array,
+            texture?: Float32Array,
+            color?: Float32Array
+        ) {
+        }
+
+        protected initialize(
+            position: Float32Array,
+            index: Int16Array,
+            normal?: Float32Array,
+            texture?: Float32Array,
+            color?: Float32Array
+        ) {
+            this.position = new VertexBufferObject(this.gl, this.size, position, this.usage);
+            this.index = new IndexBufferObject(this.gl, index, this.usage);
+            normal  || (this.normal  = new VertexBufferObject(this.gl, this.size, normal,  this.usage));
+            texture || (this.texture = new VertexBufferObject(this.gl, this.size, texture, this.usage));
+            color   || (this.color   = new VertexBufferObject(this.gl, this.size, color,   this.usage));
+        }
+    }
+
+    export class TriangleMesh extends Mesh {
+        public type: number = this.gl.TRIANGLES;
+        public size: number = 3;
+
+        constructor(
+            protected gl: WebGLRenderingContext,
+            position: Float32Array,
+            index: Int16Array,
+            normal?: Float32Array,
+            texture?: Float32Array,
+            color?: Float32Array
+        ) {
+            super(gl, position, index, normal, texture, color);
+            this.initialize(position, index, normal, texture, color);
+        }
+    }
+
+    export class ObjectM {
+        private matrix = mat4.create();
+        private mvpMatrixSetter: UniformSetter;
+        private invMatrixSetter: UniformSetter;
+
+        constructor(protected gl: WebGLRenderingContext, public program: Program, public material: Material) {
+            this.program.registerMesh(this.material.mesh);
+            this.program.registerTextures(this.material.textures)
+            this.mvpMatrixSetter = this.program.createUniformSetter("mvpMatrix");
+            this.invMatrixSetter = this.program.createUniformSetter("invMatrix");
+        }
+
+        public translate(vector: GLM.IArray) {
+            mat4.translate(this.matrix, this.matrix, vector);
+        }
+
+        public rotate(radian: number, axis: GLM.IArray) {
+            mat4.rotate(this.matrix, this.matrix, radian, axis);
+        }
+
+        public render(vp: GLM.IArray) {
+            var mvp = mat4.create();
+            var inv = mat4.create();
+            mat4.multiply(mvp, this.matrix, vp);
+            mat4.invert(inv, this.matrix);
+            this.mvpMatrixSetter.setMatrix4fv(<Float32Array>mvp);
+            this.invMatrixSetter.setMatrix4fv(<Float32Array>inv);
+            var mesh = this.material.mesh;
+            mesh.index.bind();
+            this.gl.drawElements(mesh.type, mesh.index.size, this.gl.UNSIGNED_SHORT, 0);
+        }
+    }
+
+    export class Point {
+        private point = [0.0, 0.0, 0.0];
+
+        constructor(x?: number, y?: number, z?: number) {
+            if (arguments.length == 3) {
+                this.point = [x, y, z];
+            }
+        }
+
+        public toArray(): number[] {
+            return this.point;
+        }
+        public get x(): number {
+            return this.point[0];
+        }
+        public get y(): number {
+            return this.point[1];
+        }
+        public get z(): number {
+            return this.point[2];
         }
     }
 }
