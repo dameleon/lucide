@@ -1,14 +1,16 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
+        "module": "system",
         "target": "es5",
         "noImplicitAny": false,
-        "outDir": "./lib",
-        "rootDir": "./src",
+        "sourceRoot": "./src",
+        "outFile": "./lib/lucide.js",
         "sourceMap": true,
         "noEmitOnError": true
     },
     "exclude": [
+        "typings/main.d.ts",
+        "typings/main",
         "node_modules"
     ]
 }

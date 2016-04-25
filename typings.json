@@ -1,0 +1,7 @@
+{
+  "name": "lucide",
+  "version": false,
+  "ambientDependencies": {
+    "gl-matrix": "registry:dt/gl-matrix#2.2.2+20160317120654"
+  }
+}
