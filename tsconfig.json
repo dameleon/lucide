@@ -1,16 +1,30 @@
 {
     "compilerOptions": {
         "module": "system",
-        "target": "es5",
+        "target": "es6",
         "noImplicitAny": false,
         "sourceRoot": "./src",
         "outFile": "./lib/lucide.js",
         "sourceMap": true,
         "noEmitOnError": true
     },
-    "exclude": [
-        "typings/main.d.ts",
-        "typings/main",
-        "node_modules"
+    "filesGlob": [
+        "typings/browser.d.ts",
+        "src/Context.ts",
+        "src/**/*.ts"
+    ],
+    "files": [
+        "typings/browser.d.ts",
+        "src/Context.ts",
+        "src/AttributeSetter.ts",
+        "src/BufferObject.ts",
+        "src/Factory.ts",
+        "src/GL.ts",
+        "src/Material.ts",
+        "src/Mesh.ts",
+        "src/Program.ts",
+        "src/Texture.ts",
+        "src/UniformSetter.ts",
+        "src/View.ts"
     ]
 }
