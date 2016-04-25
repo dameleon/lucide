@@ -1,5 +1,5 @@
 module Lucide {
-    class BufferObject<T extends ArrayBuffer> extends Context {
+    class BufferObject<T extends ArrayBufferView> extends Context {
         public buffer: WebGLBuffer;
         public target: number;
 

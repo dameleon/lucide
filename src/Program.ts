@@ -9,6 +9,8 @@ module Lucide {
             "normal": "normal",
             "texture": "texCoord",
         };
+        private attributeSetters: {[name:string]: AttributeSetter} = {};
+        private uniformSetters: {[name:string]: UniformSetter} = {};
 
         constructor(context: WebGLRenderingContext, vertexShader: WebGLShader, fragmentShader: WebGLShader) {
             super(context);
@@ -19,7 +21,6 @@ module Lucide {
         public registerMesh(mesh: Mesh) {
             Object.keys(this.attributeMap).forEach((key) => {
                 if (mesh[key] != undefined) {
-                    console.log(mesh[key]);
                     this.createAttributeSetter(this.attributeMap[key]).set(mesh[key]);
                 }
             });
@@ -32,11 +33,17 @@ module Lucide {
         }
 
         public createAttributeSetter(name: string): AttributeSetter {
-            return new AttributeSetter(this.context, this.context.getAttribLocation(this.program, name));
+            if (this.attributeSetters[name] == undefined) {
+                this.attributeSetters[name] = new AttributeSetter(this.context, this.context.getAttribLocation(this.program, name));
+            }
+            return this.attributeSetters[name];
         }
 
         public createUniformSetter(name: string) {
-            return new UniformSetter(this.context, this.context.getUniformLocation(this.program, name));
+            if (this.uniformSetters[name] == undefined) {
+                this.uniformSetters[name] = new UniformSetter(this.context, this.context.getUniformLocation(this.program, name));
+            }
+            return this.uniformSetters[name];
         }
 
         public linkShaders(vertexShader: WebGLShader, fragmentShader: WebGLShader) {

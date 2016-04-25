@@ -36,5 +36,17 @@ module Lucide {
         public IndexBufferObject(value: Int16Array, usage?: number): IndexBufferObject {
             return new IndexBufferObject(this.context, value, usage);
         }
+
+        public Material(mesh: Mesh, ...textures: Texture[]): Material {
+            return new Material(this.context, mesh, ...textures);
+        }
+
+        public Mesh(position: Float32Array, index: Int16Array, texture?: Float32Array, color?: Float32Array, normal?: Float32Array): Mesh {
+            return new Mesh(this.context, position, index, texture, color, normal);
+        }
+        
+        public View(program: Program, material: Material): View {
+            return new View(this.context, program, material);
+        }
     }
 }
