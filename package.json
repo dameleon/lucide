@@ -21,6 +21,8 @@
   },
   "homepage": "https://github.com/dameleon/lucide#readme",
   "devDependencies": {
-    "tsc": "^1.20150623.0"
+    "tsc": "^1.20150623.0",
+    "tsconfig-cli": "^2.0.0",
+    "typings": "^0.8.1"
   }
 }
